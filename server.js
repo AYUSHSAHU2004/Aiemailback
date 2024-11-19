@@ -41,32 +41,33 @@ const sendEmail = (transporter, mailOptions) => {
 // POST route to send email (adds email to MongoDB)
 app.post("/createGroup", async (req, res) => {
     const { email, groupName, emailList } = req.body;
-    
+
     try {
-      // Check if the groupName already exists in the database
-      const existingGroup = await GroupEmail.findOne({ groupName });
-  
-      if (existingGroup) {
-        // If the group with the same groupName already exists, return an error
-        return res.status(400).json({ error: 'Group name already exists' });
-      }
-  
-      // If groupName is unique, create a new group
-      const newGroupEmail = new GroupEmail({
-        email: email, // Main email
-        emailList: emailList, // Email list including the main email and additional emails
-        groupName: groupName // Group name
-      });
-  
-      // Save the new group to the database
-      await newGroupEmail.save();
-      res.status(201).json({ message: 'Group created successfully', data: newGroupEmail });
-  
+        // Check if a group with the same email and groupName already exists
+        const existingGroup = await GroupEmail.findOne({ email,groupName });
+
+        if (existingGroup) {
+            // If a group with the same email and groupName already exists, return an error
+            return res.status(400).json({ error: 'Group with the same email and group name already exists' });
+        }
+
+        // If the groupName exists but with a different email, allow creating the group
+        // No need for an additional check here as we only care about the combination of email and groupName
+        const newGroupEmail = new GroupEmail({
+            email: email,  // Main email
+            emailList: emailList,  // Email list including the main email and additional emails
+            groupName: groupName  // Group name
+        });
+
+        // Save the new group to the database
+        await newGroupEmail.save();
+        res.status(201).json({ message: 'Group created successfully', data: newGroupEmail });
+
     } catch (error) {
-      res.status(500).json({ error: 'Failed to create group', message: error.message });
+        res.status(500).json({ error: 'Failed to create group', message: error.message });
     }
-  });
-  
+});
+
 app.post("/createUser", async (req, res) => {
     const { email, pass} = req.body;
     try {
@@ -86,15 +87,20 @@ app.post("/createUser", async (req, res) => {
 });
 
 // PUT route to update a group email
-app.put("/updateGroup", async (req, res) => {
-    const { email, groupName, arr } = req.body; // Get email, groupName, and new email list from request body
+app.put("/updateGroup/:email/:groupName", async (req, res) => {
+    const { arr, newGroupName } = req.body; // Get the email, groupName, new email list, and new group name from the request body
 
     try {
-        // Find and update the group email based on both the email and groupName
+        // Find the group email and update both the email list and group name
         const updatedGroupEmail = await GroupEmail.findOneAndUpdate(
-            { email: email, groupName: groupName },  // Match by both email and groupName
-            { $set: { emailList: arr } },            // Update the email list
-            { new: true }                            // Return the updated document
+            { email: req.params.email, groupName: req.params.groupName },  // Match by both email and groupName from URL params
+            { 
+                $set: { 
+                    emailList: arr,              // Update the email list
+                    groupName: newGroupName      // Update the group name if provided
+                }
+            },
+            { new: true }  // Return the updated document
         );
 
         // If the group email is not found, return a 404 error
@@ -111,6 +117,7 @@ app.put("/updateGroup", async (req, res) => {
         res.status(500).json({ error: 'Failed to update group email', message: error.message });
     }
 });
+
 
 // DELETE route to delete a group email
 app.delete("/deleteGroup/:email/:groupName", async (req, res) => {
@@ -158,6 +165,8 @@ app.get("/getGroup/:email", async (req, res) => {
         res.status(500).json({ error: 'Failed to retrieve group email', message: error.message });
     }
 });
+
+
 app.delete("/deleteGroup/:email/:groupName",async(req,res)=>{
     const {email , groupName} = req.params;
     try{
@@ -168,6 +177,29 @@ app.delete("/deleteGroup/:email/:groupName",async(req,res)=>{
         res.status(500).json("error deleting group",err);
     }
 })
+
+app.get("/getEmail/:email/:groupName", async (req, res) => {
+    const { email, groupName } = req.params; // Extract email and userName from the URL parameters
+
+    try {
+        // Find the group email document that matches both email and userName
+        const groupEmail = await GroupEmail.findOne({ email: email, groupName: groupName });
+
+        // If the group email is not found, return a 404 error
+        if (!groupEmail) {
+            return res.status(404).json({ error: 'Group not found' });
+        }
+
+        // Return the found group email
+        res.status(200).json({
+            message: 'Group email retrieved successfully',
+            data: groupEmail
+        });
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to retrieve group email', message: error.message });
+    }
+});
+
 
 app.get("/checkUser/:email", async (req, res) => {
     const { email } = req.params; // Extract email from the URL parameter

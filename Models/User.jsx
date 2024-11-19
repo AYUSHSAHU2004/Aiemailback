@@ -13,7 +13,6 @@ const emailSchema = new mongoose.Schema({
   groupName: {
     type: String,  // The name of the email group
     required: true, // Ensure the group name is provided
-    unique: true,   // Ensure the group name is unique for each group
   }
 });
 
