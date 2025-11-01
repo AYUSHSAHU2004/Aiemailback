@@ -6,20 +6,19 @@ const emailQueue = new Queue('emailQueue', {
 });
 
 emailQueue.process(async (job) => {
-  const { from, to, subject, text } = job.data;
+  const { from, to, subject, text, emailUser, emailPass } = job.data;
 
-  // Ensure 'to' can be a single email or an array of emails
-  const recipients = Array.isArray(to) ? to : [to];
+  if (!emailUser || !emailPass) {
+    throw new Error('Email credentials missing in job data');
+  }
 
   const transporter = nodemailer.createTransport({
     service: 'gmail',
-    auth: { user: process.env.EMAIL_USER, pass: process.env.EMAIL_PASS },
+    auth: { user: emailUser, pass: emailPass }
   });
 
-  for (const recipient of recipients) {
-    await transporter.sendMail({ from, to: recipient, subject, text });
-    console.log(`Email sent to ${recipient}`);
-  }
+  await transporter.sendMail({ from, to, subject, text });
+  console.log(`Email sent to ${to} from ${from}`);
 });
 
 console.log('Worker started');

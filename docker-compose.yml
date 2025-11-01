@@ -8,28 +8,47 @@ services:
       - "6379:6379"
     restart: unless-stopped
 
+  mongo:
+    image: mongo:6.0
+    container_name: mongo-db
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo-data:/data/db
+
   api:
     build: ./api-server
     container_name: nodejs-api
     ports:
       - "3020:3020"
     environment:
-      - REDIS_HOST=${REDIS_HOST}
-      - REDIS_PORT=${REDIS_PORT}
-      - EMAIL_USER=${EMAIL_USER}
-      - EMAIL_PASS=${EMAIL_PASS}
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - MONGO_URI=mongodb://mongo:27017/emailGroups
     depends_on:
       - redis
+      - mongo
     restart: unless-stopped
 
   worker:
     build: ./worker
     container_name: worker
     environment:
-      - REDIS_HOST=${REDIS_HOST}
-      - REDIS_PORT=${REDIS_PORT}
-      - EMAIL_USER=${EMAIL_USER}
-      - EMAIL_PASS=${EMAIL_PASS}
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - MONGO_URI=mongodb://mongo:27017/emailGroups
     depends_on:
       - redis
+      - mongo
     restart: unless-stopped
+
+  frontend:
+    build: ./frontend
+    container_name: react-email-app
+    ports:
+      - "3000:80"
+    restart: unless-stopped
+
+volumes:
+  mongo-data:
