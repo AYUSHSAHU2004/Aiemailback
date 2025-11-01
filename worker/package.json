@@ -1,0 +1,13 @@
+{
+  "name": "email-worker",
+  "version": "1.0.0",
+  "main": "worker.js",
+  "scripts": {
+    "start": "node worker.js"
+  },
+  "dependencies": {
+    "bull": "^4.0.2",
+    "nodemailer": "^6.9.1",
+    "dotenv": "^16.0.3"
+  }
+}

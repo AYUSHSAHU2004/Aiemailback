@@ -1,0 +1,14 @@
+{
+  "name": "email-api-server",
+  "version": "1.0.0",
+  "main": "api-server.js",
+  "scripts": {
+    "start": "node api-server.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "bull": "^4.0.2",
+    "cors": "^2.8.5",
+    "dotenv": "^16.0.3"
+  }
+}
